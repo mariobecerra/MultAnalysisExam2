@@ -31,10 +31,12 @@ library(googleVis)
 library(ggmap)
 library(xtable)
 library(ineq)
-library(mclust)
+#library(mclust)
 library(kfigr)
 library(bnlearn)
 library(grid) #función unit
+#library(flexmix)
+library(R2jags)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -317,7 +319,81 @@ int2ordfact <- function(x) {
 }
 
 df_red1 <- concentradohogar %>% select(-folioviv, -foliohog, -ubica_geo, -ageb, -est_dis, -upm, -factor_hog, -NOM_LOC, -LAT_DEC, -LON_DEC, -ALTITUD, -CVE_CARTA, -PLANO, -decil_ingreso) %>% filter(complete.cases(.)) %>% int2ordfact
+
+#submuestra_conc <- sample_n(df_red1, 5000)
+submuestra_conc <- df_red1[sample(1:nrow(df_red1), 800),]
 ```
+
+#Modelos jerárquicos
+
+```{r, eval=FALSE}
+modelo_1.txt <- 
+'
+model{
+  for(i in 1:N) {
+    ing_cor[i] ~ dnorm(y.hat[i], tau.y) 
+    y.hat[i] <- a[est_socio[i]] + b1* clase_hog[i] + b2 * sexo_jefe[i]
+  }
+  b1 ~ dnorm(0, 0.0001)
+  b2 ~ dnorm(0, 0.0001)
+  tau.y <- pow(sigma.y, -2)
+  sigma.y ~ dunif(0, 100)
+  for(j in 1:J){
+    a[j] ~ dnorm(mu.a, tau.a)
+  }
+  mu.a ~ dnorm(0, 0.0001)
+  tau.a <- pow(sigma.a, -2)
+  sigma.a ~ dunif(0, 100)
+}
+'
+cat(modelo_1.txt, file = './Modelos/modelo_1.txt')
+```
+```{r, eval=FALSE}
+# creamos una lista con los datos: esta incluye índices, y variables
+N <- nrow(df_red1)
+J <- length(levels(df_red1$est_socio))
+ing_cor <- df_red1$ing_cor
+est_socio <- df_red1$est_socio
+clase_hog <- df_red1$clase_hog
+sexo_jefe <- df_red1$sexo_jefe
+jags.data <- list("ing_cor", "est_socio", "clase_hog", "sexo_jefe", "N", "J")
+
+# ahora definimss valores iniciales para los parámetros, en este caso estamos 
+# generando valores iniciales aleatorios de manera de que distintas cadenas 
+# tengan distitos valores iniciales
+# si no se especifican la función jags generará valores iniciales
+jags.inits <- function(){
+  list("sigma.y" = runif(1),
+    "b1" = runif(1),
+    "b2" = runif(1),
+    "a" = runif(J),
+    "mu.a" = runif(1),
+    "sigma.a" = runif(1))
+}
+# debemos especificar también el nombre de los parámetros que vamos a guardar
+jags.parameters <-  c("sigma.y","b1","b2", "a", "mu.a", "sigma.a")
+# Y usamos la función jags (más adelante discutiremos los otros parámetros de 
+# la función)
+jags.fit.1 <- jags(data = jags.data, inits = jags.inits, 
+  model.file = "./Modelos/modelo_1.txt", parameters.to.save = jags.parameters,
+  n.chains = 4, n.iter = 1000) 
+save(jags.fit.1, file='./Rdata/jags.fit.1.RData')
+```
+```{r}
+load('./Rdata/jags.fit.1.RData')
+traceplot(jags.fit.1)
+```
+
+
+#Mezclas de modelos
+
+```{r, eval=FALSE}
+mod1 <- FLXMRglm( ~ tam_loc+est_socio+clase_hog+sexo_jefe+educa_jefe+edad_jefe+educacion+Estado+AMBITO)
+fittedModel <- stepFlexmix(ing_cor ~ 1, model = mod1, nrep = 3, k = 3, data = df_red1)
+fittedModel2 <- stepFlexmix(ing_cor ~ ., model = mod1, nrep = 3, k = 3, data = df_red1)
+```
+
+
 
 #Modelos de mezclas Gaussianas
 
@@ -340,6 +416,5 @@ Tabla `r figr('tabladatos', FALSE, TRUE, 'table')`:
 descripcionconchogar <- read.csv('../Datos/Descripción variables concentradohogar.csv')
 kable(descripcionconchogar[,c(2,3)], caption='Descripción de las variables')
 ```
-
 
 
