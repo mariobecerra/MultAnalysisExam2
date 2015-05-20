@@ -403,9 +403,9 @@ sexo_jefe <- df_red1$sexo_jefe
 
 #Modelo 1
 
-jags.data.1 <- list("ing_cor", "est_socio", "clase_hog", "sexo_jefe", "N", "J")
+jags.data.ing.1 <- list("ing_cor", "est_socio", "clase_hog", "sexo_jefe", "N", "J")
 # ahora definimss valores iniciales para los parámetros
-jags.inits.1 <- function(){
+jags.inits.ing.1 <- function(){
   list("sigma.y" = runif(1),
     "b1" = runif(1),
     "b2" = runif(1),
@@ -414,17 +414,17 @@ jags.inits.1 <- function(){
     "sigma.a" = runif(1))
 }
 # debemos especificar también el nombre de los parámetros que vamos a guardar
-jags.parameters.1 <-  c("sigma.y","b1","b2", "a", "mu.a", "sigma.a")
-jags.fit.1 <- jags(data = jags.data.1, inits = jags.inits.1, 
-  model.file = "./Modelos/modelo_1.txt", parameters.to.save = jags.parameters.1,
-  n.chains = 4, n.iter = 1000) 
-save(jags.fit.1, file='./Rdata/jags.fit.1.RData')
+jags.parameters.ing.1 <-  c("sigma.y","b1","b2", "a", "mu.a", "sigma.a")
+jags.fit.ing.1 <- jags(data = jags.data.ing.1, inits = jags.inits.ing.1, 
+  model.file = "./Modelos/modelo_1.txt", parameters.to.save = jags.parameters.ing.1,
+  n.chains = 4, n.iter = 2000) 
+save(jags.fit.ing.1, file='./Rdata/jags.fit.ing1.RData')
 
 #Modelo 2
 
-jags.data.2 <- list("log_ing_cor", "est_socio", "clase_hog", "sexo_jefe", "N", "J")
+jags.data.ing.2 <- list("log_ing_cor", "est_socio", "clase_hog", "sexo_jefe", "N", "J")
 # ahora definimss valores iniciales para los parámetros
-jags.inits.2 <- function(){
+jags.inits.ing.2 <- function(){
   list("sigma.y" = runif(1),
     "b1" = runif(1),
     "b2" = runif(1),
@@ -433,17 +433,21 @@ jags.inits.2 <- function(){
     "sigma.a" = runif(1))
 }
 # debemos especificar también el nombre de los parámetros que vamos a guardar
-jags.parameters.2 <-  c("sigma.y","b1","b2", "a", "mu.a", "sigma.a")
-jags.fit.2 <- jags(data = jags.data.2, inits = jags.inits.2, 
-  model.file = "./Modelos/modelo_2.txt", parameters.to.save = jags.parameters.2,
-  n.chains = 4, n.iter = 1000) 
-save(jags.fit.2, file='./Rdata/jags.fit.2.RData')
+jags.parameters.ing.2 <-  c("sigma.y","b1","b2", "a", "mu.a", "sigma.a")
+jags.fit.ing.2 <- jags(data = jags.data.ing.2, inits = jags.inits.ing.2, 
+  model.file = "./Modelos/modelo_2.txt", parameters.to.save = jags.parameters.ing.2,
+  n.chains = 4, n.iter = 2000) 
+save(jags.fit.ing.2, file='./Rdata/jags.fit.ing.2.RData')
 
 ```
+##Modelo de ingreso 1
 ```{r}
 load('./Rdata/jags.fit.1.RData')
 traceplot(jags.fit.1)
+```
 
+##Modelo de ingreso 2
+```{r}
 load('./Rdata/jags.fit.2.RData')
 traceplot(jags.fit.2)
 ```
