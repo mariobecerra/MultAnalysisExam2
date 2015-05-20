@@ -367,22 +367,45 @@ model{
 }
 '
 cat(modelo_1.txt, file = './Modelos/modelo_1.txt')
+
+modelo_2.txt <- 
+'
+model{
+  for(i in 1:N) {
+    log_ing_cor[i] ~ dnorm(y.hat[i], tau.y) 
+    y.hat[i] <- a[est_socio[i]] + b1* clase_hog[i] + b2 * sexo_jefe[i]
+  }
+  b1 ~ dnorm(0, 0.0001)
+  b2 ~ dnorm(0, 0.0001)
+  tau.y <- pow(sigma.y, -2)
+  sigma.y ~ dunif(0, 100)
+  for(j in 1:J){
+    a[j] ~ dnorm(mu.a, tau.a)
+  }
+  mu.a ~ dnorm(0, 0.0001)
+  tau.a <- pow(sigma.a, -2)
+  sigma.a ~ dunif(0, 100)
+}
+'
+
+cat(modelo_2.txt, file = './Modelos/modelo_2.txt')
 ```
 ```{r, eval=FALSE}
 # creamos una lista con los datos: esta incluye índices, y variables
 N <- nrow(df_red1)
 J <- length(levels(df_red1$est_socio))
 ing_cor <- df_red1$ing_cor
+log_ing_cor <- log(df_red1$ing_cor)
 est_socio <- df_red1$est_socio
 clase_hog <- df_red1$clase_hog
 sexo_jefe <- df_red1$sexo_jefe
-jags.data <- list("ing_cor", "est_socio", "clase_hog", "sexo_jefe", "N", "J")
 
-# ahora definimss valores iniciales para los parámetros, en este caso estamos 
-# generando valores iniciales aleatorios de manera de que distintas cadenas 
-# tengan distitos valores iniciales
-# si no se especifican la función jags generará valores iniciales
-jags.inits <- function(){
+
+#Modelo 1
+
+jags.data.1 <- list("ing_cor", "est_socio", "clase_hog", "sexo_jefe", "N", "J")
+# ahora definimss valores iniciales para los parámetros
+jags.inits.1 <- function(){
   list("sigma.y" = runif(1),
     "b1" = runif(1),
     "b2" = runif(1),
@@ -391,17 +414,38 @@ jags.inits <- function(){
     "sigma.a" = runif(1))
 }
 # debemos especificar también el nombre de los parámetros que vamos a guardar
-jags.parameters <-  c("sigma.y","b1","b2", "a", "mu.a", "sigma.a")
-# Y usamos la función jags (más adelante discutiremos los otros parámetros de 
-# la función)
-jags.fit.1 <- jags(data = jags.data, inits = jags.inits, 
-  model.file = "./Modelos/modelo_1.txt", parameters.to.save = jags.parameters,
+jags.parameters.1 <-  c("sigma.y","b1","b2", "a", "mu.a", "sigma.a")
+jags.fit.1 <- jags(data = jags.data.1, inits = jags.inits.1, 
+  model.file = "./Modelos/modelo_1.txt", parameters.to.save = jags.parameters.1,
   n.chains = 4, n.iter = 1000) 
 save(jags.fit.1, file='./Rdata/jags.fit.1.RData')
+
+#Modelo 2
+
+jags.data.2 <- list("log_ing_cor", "est_socio", "clase_hog", "sexo_jefe", "N", "J")
+# ahora definimss valores iniciales para los parámetros
+jags.inits.2 <- function(){
+  list("sigma.y" = runif(1),
+    "b1" = runif(1),
+    "b2" = runif(1),
+    "a" = runif(J),
+    "mu.a" = runif(1),
+    "sigma.a" = runif(1))
+}
+# debemos especificar también el nombre de los parámetros que vamos a guardar
+jags.parameters.2 <-  c("sigma.y","b1","b2", "a", "mu.a", "sigma.a")
+jags.fit.2 <- jags(data = jags.data.2, inits = jags.inits.2, 
+  model.file = "./Modelos/modelo_2.txt", parameters.to.save = jags.parameters.2,
+  n.chains = 4, n.iter = 1000) 
+save(jags.fit.2, file='./Rdata/jags.fit.2.RData')
+
 ```
 ```{r}
 load('./Rdata/jags.fit.1.RData')
 traceplot(jags.fit.1)
+
+load('./Rdata/jags.fit.2.RData')
+traceplot(jags.fit.2)
 ```
 
 
