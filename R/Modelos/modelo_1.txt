@@ -1,7 +1,7 @@
 
 model{
   for(i in 1:N) {
-    ing_cor[i] ~ dnorm(y.hat[i], tau.y) 
+    ing_cor[i] ~ dlnorm(y.hat[i], tau.y) 
     y.hat[i] <- a[est_socio[i]] + b1* clase_hog[i] + b2 * sexo_jefe[i]
   }
   b1 ~ dnorm(0, 0.0001)
